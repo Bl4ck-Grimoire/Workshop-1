@@ -1,0 +1,52 @@
+erDiagram
+    DIM_DATE {
+        int date_key PK
+        date full_date
+        int day
+        int month
+        string month_name
+        int quarter
+        int year
+    }
+
+    DIM_TECHNOLOGY {
+        int technology_key PK
+        string technology_name
+    }
+
+    DIM_COUNTRY {
+        int country_key PK
+        string country_name
+    }
+
+    DIM_SENIORITY {
+        int seniority_key PK
+        string seniority_level
+        int seniority_rank
+    }
+
+    DIM_EXPERIENCE_RANGE {
+        int experience_key PK
+        string yoe_range
+        int yoe_min
+        int yoe_max
+    }
+
+    FACT_APPLICATION {
+        int application_key PK
+        int date_key FK
+        int technology_key FK
+        int country_key FK
+        int seniority_key FK
+        int experience_key FK
+        int code_challenge_score
+        int technical_interview_score
+        int score_gap
+        int is_hired
+    }
+
+    DIM_DATE ||--o{ FACT_APPLICATION : "date_key"
+    DIM_TECHNOLOGY ||--o{ FACT_APPLICATION : "technology_key"
+    DIM_COUNTRY ||--o{ FACT_APPLICATION : "country_key"
+    DIM_SENIORITY ||--o{ FACT_APPLICATION : "seniority_key"
+    DIM_EXPERIENCE_RANGE ||--o{ FACT_APPLICATION : "experience_key"
