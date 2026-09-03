@@ -1,25 +1,10 @@
-"""
-Task 4 - Dimensional Transformation
-
-Construye las 5 dimensiones y el FACT_APPLICATION definidos en el punto 9
-(Star Schema), generando surrogate keys y mapeando cada postulacion a sus
-llaves de dimension.
-
-Conceptualmente:
-Prepared Candidate Data -> Dimension Records -> Surrogate Keys ->
-Key Mapping -> Fact Table
-"""
 from __future__ import annotations
-
 import pandas as pd
 
-# Bandas de experiencia (YOE real observado: 0-30 anios, ver Task 1)
 YOE_BINS = [-1, 5, 10, 15, 20, 25, 30]
 YOE_LABELS = ["0-5", "6-10", "11-15", "16-20", "21-25", "26-30"]
 
-# Orden logico de seniority, para el atributo seniority_rank (ordenar en BI)
 SENIORITY_ORDER = ["Trainee", "Intern", "Junior", "Mid-Level", "Senior", "Lead", "Architect"]
-
 
 def build_dim_date(df: pd.DataFrame) -> pd.DataFrame:
     dates = df["Application Date"].dropna().dt.normalize().unique()
@@ -86,11 +71,10 @@ def build_fact_application(
     fact = fact.merge(dim_seniority, left_on="Seniority", right_on="seniority_level", how="left")
     fact = fact.merge(dim_experience, on="yoe_range", how="left")
 
-    # Validacion de integridad: ninguna postulacion debe quedar sin llave
     key_cols = ["date_key", "technology_key", "country_key", "seniority_key", "experience_key"]
     missing = fact[key_cols].isnull().any(axis=1).sum()
     if missing:
-        raise ValueError(f"[DIMENSIONAL_MODEL] {missing} filas no pudieron mapearse a una dimension")
+        raise ValueError(f"[DIMENSIONAL_MODEL] {missing} Rows could not be mapped to a dimension.")
 
     fact = fact.reset_index(drop=True)
     fact.insert(0, "application_key", range(1, len(fact) + 1))
@@ -109,7 +93,6 @@ def build_fact_application(
 
 
 def build_star_schema(df_transformed: pd.DataFrame) -> dict:
-    """Construye las 5 dimensiones y el fact table a partir de los datos ya transformados."""
     dim_date = build_dim_date(df_transformed)
     dim_technology = build_dim_technology(df_transformed)
     dim_country = build_dim_country(df_transformed)
@@ -120,13 +103,13 @@ def build_star_schema(df_transformed: pd.DataFrame) -> dict:
         df_transformed, dim_date, dim_technology, dim_country, dim_seniority, dim_experience
     )
 
-    print("[DIMENSIONAL_MODEL] Tablas construidas:")
-    print(f"  dim_date:             {len(dim_date)} filas")
-    print(f"  dim_technology:       {len(dim_technology)} filas")
-    print(f"  dim_country:          {len(dim_country)} filas")
-    print(f"  dim_seniority:        {len(dim_seniority)} filas")
-    print(f"  dim_experience_range: {len(dim_experience)} filas")
-    print(f"  fact_application:     {len(fact_application)} filas")
+    print("[DIMENSIONAL_MODEL] Tables built:")
+    print(f"  dim_date:             {len(dim_date)} rows")
+    print(f"  dim_technology:       {len(dim_technology)} rows")
+    print(f"  dim_country:          {len(dim_country)} rows")
+    print(f"  dim_seniority:        {len(dim_seniority)} rows")
+    print(f"  dim_experience_range: {len(dim_experience)} rows")
+    print(f"  fact_application:     {len(fact_application)} rows")
 
     return {
         "dim_date": dim_date,

@@ -10,7 +10,7 @@ from load import load_all
 
 def run_pipeline() -> None:
     print("=" * 60)
-    print("WORKSHOP 1 - ETL PIPELINE - Recruitment Data Warehouse")
+    print("WORKSHOP 1 - Recruitment Data Warehouse")
     print("=" * 60)
 
     print("\n[1/4] EXTRACT")
@@ -26,7 +26,7 @@ def run_pipeline() -> None:
     load_all(star_schema)
 
     print("\n" + "=" * 60)
-    print("PIPELINE COMPLETADO EXITOSAMENTE")
+    print("PIPELINE COMPLETED SUCCESSFULLY")
     print("=" * 60)
 
 
