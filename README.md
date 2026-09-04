@@ -46,7 +46,7 @@ files; this project turns it into an analytical system that supports recruitment
 
 ## 5. Dataset Description
 
-- Source file: `candidates.csv` — **~50,000 rows**, one row = one candidate application.
+- Source file: `candidates.csv` **~50,000 rows**, one row = one candidate application.
 - Delimiter: `;`.
 - Columns: `First Name`, `Last Name`, `Email`, `Country`, `Application Date`, `YOE`,
   `Seniority`, `Technology`, `Code Challenge Score`, `Technical Interview Score`.
@@ -71,22 +71,19 @@ files; this project turns it into an analytical system that supports recruitment
 
 **Candidate application evaluation** within the technical recruitment/selection pipeline. All
 five requirements analyze different angles (time, technology, candidate profile, assessment
-consistency, geography) of the same underlying business event — a candidate's evaluated
-application — so a single fact table at the application grain is sufficient. There was no need
+consistency, geography) of the same underlying business event  a candidate's evaluated
+application  so a single fact table at the application grain is sufficient. There was no need
 for multiple business processes or fact tables.
 
 ## 8. Grain Definition
 
 > **One row in `FACT_APPLICATION` represents one candidate's individual application to the
-> technical recruitment process, including both assessment scores and the resulting hiring
+> technical recruitment process, including country and both assessment scores and the resulting hiring
 > outcome for that specific application.**
 
 ## 9. Star Schema Diagram
 
 ![Star Schema Diagram](diagrams/star_diagram.png)
-
-*(Insert the Star Schema image here — export it from `diagrams/star_schema.mermaid` using the
-Mermaid Live Editor, or from draw.io if you converted it.)*
 
 ## 10. Explanation of Dimensions and Facts
 
@@ -114,41 +111,38 @@ describes the candidate's profile rather than an outcome of the evaluation event
 | `technical_interview_score` | Technical Interview result (0-10) | Original column | R2, R4 |
 | `score_gap` | Absolute gap between both assessments | `ABS(code_challenge_score - technical_interview_score)` | R4 |
 | `is_hired` | Hiring outcome flag (1/0) | `1 if code_challenge_score>=7 AND technical_interview_score>=7 else 0` | R1, R2, R3 |
-| *(applications count)* | Application volume | Implicit `COUNT(*)` — not a stored column | R1, R2, R3, R5 |
+| *(applications count)* | Application volume | Implicit `COUNT(*)`  not a stored column | R1, R2, R3, R5 |
 
 `code_challenge_score` and `technical_interview_score` are non-additive (averaged, never
 summed); `is_hired` is fully additive (`SUM` = total hires, `AVG` = hire rate). Every dimension
-uses a **surrogate key** generated during the ETL process — natural source values
+uses a **surrogate key** generated during the ETL process  natural source values
 (`technology_name`, `country_name`, etc.) are never used as primary keys.
 
 ## 11. ETL Architecture
 
-![ETL Architecture Diagram](diagrams/etl_architecture.png)
-
-*(Insert the architecture diagram here — exported from `diagrams/workshop1_arquitectura.drawio`.)*
-
-The pipeline follows: **Extract** (`src/extract.py`) → **Transform** (`src/transform.py`) →
-**Dimensional Model** (`src/dimensional_model.py`) → **Load** (`src/load.py`), orchestrated by
-`src/main.py`. Analytical data is queried directly from the MySQL Data Warehouse
-(`sql/analytical_queries.sql`) and visualized in Power BI.
+![ETL Architecture Diagram](diagrams/ETL-diagram.png)
 
 ## 12. Main Transformation Decisions
 
-- The source file uses `;` as a delimiter, not `,` — handled explicitly in `extract.py`.
+- The source file uses `;` as a delimiter, handled explicitly in `extract.py`.
 - Data types corrected: `Application Date` → datetime, `YOE` and both scores → numeric.
 - Categorical text columns (`Country`, `Seniority`, `Technology`) standardized with `strip()`.
-- The 167 duplicated emails were **kept** (not deduplicated) — the grain is "one application",
+- The 167 duplicated emails were **kept** due to the grain is "one application",
   so each row is a valid, independent record.
 - `is_hired` and `score_gap` are the only derived columns created, both tied directly to a
-  business requirement — no transformation without analytical purpose was added.
+  business requirement  no transformation without analytical purpose was added.
 - `YOE` was banded into `DIM_EXPERIENCE_RANGE` instead of kept as a raw fact measure.
 - Surrogate keys are generated sequentially in Python **before** loading, rather than relying
   on MySQL `AUTO_INCREMENT`, so keys are deterministic and reproducible across runs.
 
 ## 13. Technologies
 
-Python, Pandas, Jupyter Notebook, SQL, MySQL (MySQL Workbench), SQLAlchemy + PyMySQL, Git &
-GitHub, Power BI.
+- Python
+- Pandas
+- Jupyter Notebook
+- SQL, MySQL (MySQL Workbench), SQLAlchemy + PyMySQL
+- Git & GitHub
+- Power BI
 
 ## 14. Instructions to Run the Project
 
@@ -156,21 +150,15 @@ GitHub, Power BI.
 
 ```bash
 # 1. Clone the repository and enter it
-git clone <repo-url>
+git clone https://github.com/Bl4ck-Grimoire/Workshop-1
 cd workshop-1
 
-# 2. Create a virtual environment and install dependencies
-python -m venv venv
-source venv/bin/activate        # Windows: venv\Scripts\activate
-pip install -r requirements.txt
+# 2. Create a virtual enviroment
+python -m venv .venv
+.venv\Scripts\activate
 
-# 3. Place the source file
-#    data/raw/candidates.csv
-
-# 4. Create an empty MySQL database (once), e.g. in MySQL Workbench:
-#    CREATE DATABASE recruitment_dw;
-
-# 5. Configure the connection (environment variables, defaults shown)
+# Rename the file .env.example to only .env 
+# Also configure your credentials
 export MYSQL_USER=root
 export MYSQL_PASSWORD=your_password
 export MYSQL_HOST=127.0.0.1
@@ -178,30 +166,24 @@ export MYSQL_PORT=3306
 export MYSQL_DATABASE=recruitment_dw
 
 # 6. (Optional) Run the profiling notebook
-jupyter notebook notebooks/data_profiling.ipynb
+# Open it on jupiter notebook, place the data source file and run it 
 
-# 7. Run the full ETL pipeline (Extract -> Transform -> Model -> Load)
-cd src
-python main.py
+# 7. Run the project
+python src/main.py
 ```
 
-**Connecting the dashboard (Power BI):**
+**Connecting the dashboard:**
 
 1. Install the MySQL connector for Power BI (**MySQL Connector/NET**) before connecting.
 2. In Power BI Desktop: *Get Data > More > Database > MySQL database* → enter the server and
    `recruitment_dw`, then your credentials. Select the 6 tables (`fact_application` + the 5
    dimensions) and click **Load**.
 3. In *Model view*, verify the 5 relationships (dimension → fact, one-to-many, single direction).
-4. Create the base DAX measures (`Total Applications`, `Total Hired`, `Hire Rate %`,
-   `Avg Score Gap`) on `fact_application`.
-5. For R5, import `sql/analytical_queries.sql`'s R5 query directly as a native query
-   (*Get Data > MySQL database > Advanced options*) to bring in the pre-ranked table.
-6. Build one report page per requirement and save the `.pbix` file under `results/`.
+4. Build one report page per requirement and save the `.pbix` file under `results/`.
 
 ## 15. Analytical Queries and KPIs
 
-All queries run directly against the Data Warehouse (`sql/analytical_queries.sql`), never
-against the source CSV:
+All queries run directly against the Data Warehouse:
 
 | Requirement | KPI | Query summary |
 |---|---|---|
@@ -222,11 +204,7 @@ against the source CSV:
 - **R4:** Average gap between both assessments is ≈3.5-3.8 points across every
   technology/seniority combination, with no outliers suggesting systematic inconsistency.
 - **R5:** Maximum geographic concentration found is only ≈1% of any technology's candidate pool
-  coming from a single country (out of 244 countries) — no real geographic dependency risk.
-- **Overall:** the dataset behaves like a synthetically generated, near-uniform distribution
-  across most attributes. The Data Warehouse and queries answer all five business questions
-  correctly; the current data simply does not contain dramatic patterns, which is itself a
-  valid and reportable finding.
+  coming from a single country (out of 244 countries)  no real geographic dependency risk.
 
 ## 17. Final Requirements Validation
 
@@ -236,13 +214,13 @@ against the source CSV:
 | R2 | Yes | fact_application, dim_technology | Hires and hire rate by technology | Hires proportional to volume; hire rate similar (~13%-15%) across technologies |
 | R3 | Yes | fact_application, dim_seniority, dim_experience_range | Hire rate by seniority × YOE range | Hire rate nearly identical (~12.7%-13.8%) across all profiles |
 | R4 | Yes | fact_application, dim_technology, dim_seniority | Average score gap by technology/seniority | Gap of ~3.5-3.8 points everywhere, no systematic inconsistency |
-| R5 | Yes | fact_application, dim_technology, dim_country | Top-country concentration % by technology | Max concentration ~1% — no geographic dependency risk detected |
+| R5 | Yes | fact_application, dim_technology, dim_country | Top-country concentration % by technology | Max concentration ~1%  no geographic dependency risk detected |
 
 **Does the final Data Warehouse provide enough information to satisfy all five business
-requirements?** Yes — all five were answered directly from the DW.
+requirements?** Yes  all five were answered directly from the DW.
 
 **Does the dimensional model contain elements that are not justified by the analytical
-requirements?** No — every dimension and every measure is traceable to at least one requirement
+requirements?** No  every dimension and every measure is traceable to at least one requirement
 (see Section 10).
 
 **What business decisions can now be supported by the implemented analytical system?** With the
