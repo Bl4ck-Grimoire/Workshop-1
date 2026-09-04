@@ -1,7 +1,6 @@
-# Workshop 1 — Recruitment Dimensional Data Warehouse
+# Workshop 1: Recruitment Dimensional Data Warehouse
 
-ETL course (G01) — Universidad Autónoma de Occidente
-*From Business Requirements to a Dimensional Data Warehouse*
+`Juan David Lasso Chaparro`
 
 ---
 
@@ -21,7 +20,7 @@ satisfies concrete business requirements.
 A technology recruitment company wants to improve its understanding of its candidate selection
 process. Candidates apply from many countries, at different seniority levels and years of
 experience, for different technology profiles. Each candidate is evaluated through two
-technical assessments — a **Code Challenge Score** and a **Technical Interview Score** — and is
+technical assessments, a **Code Challenge Score** and a **Technical Interview Score**, and is
 considered **HIRED** when both scores are `>= 7`. Until now, this data only existed as raw
 files; this project turns it into an analytical system that supports recruitment decisions.
 
@@ -47,18 +46,18 @@ files; this project turns it into an analytical system that supports recruitment
 
 ## 5. Dataset Description
 
-- Source file: `data/raw/candidates.csv` — **~50,000 rows**, one row = one candidate application.
-- Delimiter: `;` (semicolon), not a comma.
+- Source file: `candidates.csv` — **~50,000 rows**, one row = one candidate application.
+- Delimiter: `;`.
 - Columns: `First Name`, `Last Name`, `Email`, `Country`, `Application Date`, `YOE`,
   `Seniority`, `Technology`, `Code Challenge Score`, `Technical Interview Score`.
-- Business rule (applied during ETL): `HIRED = (Code Challenge Score >= 7) AND (Technical Interview Score >= 7)`.
+- Business rule: `HIRED = Code Challenge Score >= 7 And Technical Interview Score >= 7`.
 
 ## 6. Main Profiling Findings
 
-(Full detail in `notebooks/data_profiling.ipynb`, Task 1.)
+(Full detail in `notebooks/data_profiling.ipynb`)
 
 - 50,000 rows, 10 columns, **no missing values** in any column.
-- **No fully duplicated rows**, but **167 duplicated emails** — some candidates applied more
+- **No fully duplicated rows**, but **167 duplicated emails** some candidates applied more
   than once. This confirmed the grain must be "one application", not "one unique candidate".
 - **244** unique countries and **24** unique technologies.
 - `Seniority` has **7 levels**: Architect, Intern, Junior, Lead, Mid-Level, Senior, Trainee.
@@ -84,7 +83,7 @@ for multiple business processes or fact tables.
 
 ## 9. Star Schema Diagram
 
-![Star Schema Diagram](diagrams/star_schema.png)
+![Star Schema Diagram](diagrams/star_diagram.png)
 
 *(Insert the Star Schema image here — export it from `diagrams/star_schema.mermaid` using the
 Mermaid Live Editor, or from draw.io if you converted it.)*
